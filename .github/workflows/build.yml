@@ -1,3 +1,4 @@
+
 name: Build Shadow Ninja APK
 
 on:
@@ -64,15 +65,18 @@ jobs:
           import re
 
           path = Path("android/app/src/main/AndroidManifest.xml")
+
           if not path.exists():
               raise SystemExit("AndroidManifest.xml tidak ditemukan")
 
           xml = path.read_text(encoding="utf-8")
+
           pattern = re.compile(
               r'(<activity\b[^>]*android:name="[^"]*MainActivity"[^>]*)(>)'
           )
 
           match = pattern.search(xml)
+
           if not match:
               raise SystemExit("MainActivity tidak ditemukan")
 
