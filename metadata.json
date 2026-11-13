@@ -1,0 +1,6 @@
+{
+  "name": "Shadow Ninja",
+  "description": "2D Anime Action RPG & Hack-and-Slash Platformer across 5 realms with 5 bosses, skill trees, touch controls, and offline IndexedDB save slots.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
