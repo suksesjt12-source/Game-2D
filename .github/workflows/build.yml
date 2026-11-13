@@ -14,7 +14,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -34,10 +34,15 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            platform-tools
-            platforms;android-36
-            build-tools;36.0.0
+          packages: ''
+          accept-android-sdk-licenses: true
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0"
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
@@ -48,7 +53,7 @@ jobs:
       - name: Build Web Game
         run: npm run build
 
-      - name: Setup Capacitor
+      - name: Setup Capacitor Android
         run: |
           npm install @capacitor/android@^8.6.2 --no-save --no-package-lock --no-audit --no-fund
 
@@ -64,15 +69,16 @@ jobs:
           from pathlib import Path
           import re
 
-          path = Path("android/app/src/main/AndroidManifest.xml")
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
 
-          if not path.exists():
+          if not manifest.is_file():
               raise SystemExit("AndroidManifest.xml tidak ditemukan")
 
-          xml = path.read_text(encoding="utf-8")
+          xml = manifest.read_text(encoding="utf-8")
 
           pattern = re.compile(
-              r'(<activity\b[^>]*android:name="[^"]*MainActivity"[^>]*)(>)'
+              r'(<activity\b[^>]*android:name="[^"]*MainActivity"[^>]*)(>)',
+              re.DOTALL
           )
 
           match = pattern.search(xml)
@@ -92,7 +98,7 @@ jobs:
               + match.group(2)
           )
 
-          path.write_text(
+          manifest.write_text(
               xml[:match.start()] + replacement + xml[match.end():],
               encoding="utf-8"
           )
