@@ -1,69 +1,68 @@
-name: Build Shadow Ninja Android APK
+
+name: Build Shadow Ninja APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  build-android-apk:
+  build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
-      - name: Type check & Build web bundle
-        run: |
-          npm run lint
-          npm run build
+      - name: Check TypeScript
+        run: npm run lint
 
-      - name: Install Capacitor Android platform & sync
+      - name: Build Web
+        run: npm run build
+
+      - name: Setup Capacitor Android
         run: |
-          npm install @capacitor/android --no-save
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
+          npm install @capacitor/android@^8.6.2 --no-save --no-package-lock
+          npx cap add android
           npx cap sync android
 
-      - name: Enforce Landscape Orientation & Fullscreen in AndroidManifest
+      - name: Set Landscape
         run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          if [ -f "$MANIFEST" ]; then
-            sed -i 's/android:name=".MainActivity"/android:name=".MainActivity" android:screenOrientation="sensorLandscape"/' "$MANIFEST"
-          fi
+          sed -i 's/android:screenOrientation="[^"]*"//g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:name=".MainActivity"/android:name=".MainActivity" android:screenOrientation="sensorLandscape"/' android/app/src/main/AndroidManifest.xml
 
-      - name: Grant execute permission for Gradlew
+      - name: Build APK
         working-directory: android
-        run: chmod +x gradlew
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
 
-      - name: Build Debug APK
-        working-directory: android
-        run: ./gradlew assembleDebug
-
-      - name: Upload Shadow Ninja APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: shadow-ninja-debug-apk
+          name: Shadow-Ninja-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+          if-no-files-found: error
