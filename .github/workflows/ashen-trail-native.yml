@@ -1,0 +1,64 @@
+name: Ashen Trail native build
+
+on:
+  push:
+    paths:
+      - 'ashen-trail-native-source.zip'
+      - 'ashen-trail-native/**'
+      - '.github/workflows/ashen-trail-native.yml'
+  pull_request:
+    paths:
+      - 'ashen-trail-native-source.zip'
+      - 'ashen-trail-native/**'
+      - '.github/workflows/ashen-trail-native.yml'
+  workflow_dispatch:
+
+jobs:
+  desktop:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract source package
+        run: unzip -q ashen-trail-native-source.zip
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake git libgl1-mesa-dev libx11-dev libxrandr-dev libxi-dev libxcursor-dev libxinerama-dev libasound2-dev
+      - name: Configure desktop build
+        run: cmake -S ashen_trail_cpp -B ashen_trail_cpp/build -DCMAKE_BUILD_TYPE=Release
+      - name: Compile desktop game
+        run: cmake --build ashen_trail_cpp/build --config Release --parallel 2
+      - name: Upload Linux build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ashen-trail-linux-x86_64
+          path: |
+            ashen_trail_cpp/build/ashen_trail
+            ashen_trail_cpp/build/assets/**
+
+  android:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract source package
+        run: unzip -q ashen-trail-native-source.zip
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK components
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973" "cmake;3.22.1"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build arm64 debug APK
+        working-directory: ashen_trail_cpp/android
+        run: gradle --no-daemon assembleDebug
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ashen-trail-android-debug-arm64
+          path: ashen_trail_cpp/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
