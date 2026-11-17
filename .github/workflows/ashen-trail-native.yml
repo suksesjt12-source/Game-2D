@@ -3,12 +3,12 @@ name: Ashen Trail native build
 on:
   push:
     paths:
-      - 'ashen-trail-native-source.zip'
+      - 'ashen-trail-native-source.tar.xz'
       - 'ashen-trail-native/**'
       - '.github/workflows/ashen-trail-native.yml'
   pull_request:
     paths:
-      - 'ashen-trail-native-source.zip'
+      - 'ashen-trail-native-source.tar.xz'
       - 'ashen-trail-native/**'
       - '.github/workflows/ashen-trail-native.yml'
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Extract source package
-        run: unzip -q ashen-trail-native-source.zip
+        run: tar -xJf ashen-trail-native-source.tar.xz
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
@@ -28,20 +28,21 @@ jobs:
         run: cmake -S ashen_trail_cpp -B ashen_trail_cpp/build -DCMAKE_BUILD_TYPE=Release
       - name: Compile desktop game
         run: cmake --build ashen_trail_cpp/build --config Release --parallel 2
-      - name: Upload Linux build
+      - name: Upload Linux build and source archive
         uses: actions/upload-artifact@v4
         with:
           name: ashen-trail-linux-x86_64
           path: |
             ashen_trail_cpp/build/ashen_trail
             ashen_trail_cpp/build/assets/**
+            ashen-trail-native-source.tar.xz
 
   android:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Extract source package
-        run: unzip -q ashen-trail-native-source.zip
+        run: tar -xJf ashen-trail-native-source.tar.xz
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
